@@ -1,16 +1,25 @@
-const vendorAuthCore = require("../../services/Core/Vendor/vendorAuthCore");
 const AppError = require("../../utils/AppError");
-exports.getVendor = async (req, res,next) => {
+const VendorModel = require("../../../Models/VendorModel");
+const UserModel = require("../../../Models/UserModel");
+const vendorCore = require("./vendorAccountCore");
+exports.getVendor = async function (Body) {
     try {
-        const vendor = await vendorAuthCore.getVendor(req.body)
-        res.status(200).json({
-            status: "success",
-            data: {
-                vendor,
-            }
-        });
+        const { name, email, password, role, file } = Body;
+
+        const [existVendor, existOwner] = await Promise.all([
+            VendorModel.findOne({ vendor_email: email }),
+            UserModel.findOne({ email })
+        ]);
+
+        if (existVendor || existOwner) {
+            throw new AppError("Vendor or User already exists", 409);
+        }
+
+        const vendor = await vendorCore.createVendorCore(name, email, password, role, file);
+        return vendor;
     } catch (error) {
-        next(new AppError(error.message, 500));
+        if (error.statusCode) throw error;
+        throw new AppError(error.message || "Internal Server Error", 500);
     }
 };
 
