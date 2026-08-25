@@ -36,7 +36,7 @@ const runTests = async () => {
         });
     }
 
-    const token = jwt.sign({ id: vendor._id }, JWT_SECRET, { expiresIn: "90d" });
+    const token = jwt.sign({ id: vendor._id, role: vendor.role }, JWT_SECRET, { expiresIn: "90d" });
 
     // 1. CREATE PACKAGE (POST /create-package)
     try {
@@ -49,8 +49,12 @@ const runTests = async () => {
         formData.append("package_status", "active");
         formData.append("startDate", "2026-09-01T08:00:00.000Z");
         formData.append("endDate", "2026-09-04T18:00:00.000Z");
+        formData.append("max_people", "50");
+        formData.append("meeting_point", "Downtown Square");
+        formData.append("itinerary", JSON.stringify([{ day_number: 1, title: "Day 1", activities: "Walk around the city." }]));
+        formData.append("included_services", JSON.stringify([{ title: "Guide", description: "Professional tour guide." }]));
+        formData.append("excluded_services", JSON.stringify([{ title: "Lunch", description: "Food is not included." }]));
         
-        // Create a valid 1x1 PNG image
         const base64Png = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
         const buffer = Buffer.from(base64Png, "base64");
         const blob = new Blob([buffer], { type: "image/png" });
@@ -76,7 +80,6 @@ const runTests = async () => {
         console.log("❌ Error:", err.message);
     }
 
-    // 2. GET ALL PACKAGES (GET /)
     try {
         console.log("\n2. Testing GET / ...");
         const res = await fetch(`${BASE_URL}/`, {
