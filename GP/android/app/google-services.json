@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "453349142194",
+    "project_id": "xenon-50792",
+    "storage_bucket": "xenon-50792.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:453349142194:android:00d9c60fcf1766771ca3ab",
+        "android_client_info": {
+          "package_name": "com.xenon.gp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAMDVecrfy_YgTJ8xVwN8zmRG5Yg55I1EU"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
