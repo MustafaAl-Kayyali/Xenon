@@ -16,6 +16,7 @@ exports.submitReportValidation = function (req, res, next) {
         content_type: joi.string().valid("package", "review", "comment", "user_profile").required(),
         content_id: joi.string().uuid().required(),
         reason: joi.string().min(5).max(100).required(),
+    
         description: joi.string().min(10).max(1000).required()
     });
     validateMiddleware(Schema, req.body, req, next);
