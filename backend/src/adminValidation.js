@@ -22,7 +22,8 @@ const registerAdminSchema = Joi.object({
         'string.pattern.base': 'Invalid mobile number format.'
     }),
     position: Joi.string().valid(...STAFF_POSITIONS.admin).optional(),
-    
+    gender: Joi.string().valid('male', 'female').optional(),
+    DateOfBirth: Joi.date().iso().optional(),
     adminSecretKey: Joi.string().optional()
 });
 

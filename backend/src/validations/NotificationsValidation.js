@@ -10,8 +10,8 @@ const handleJoiError = (error, next) => {
 
 const targetedNotificationSchema = Joi.object({
     userIds: Joi.alternatives().try(
-        Joi.string().hex().length(24),
-        Joi.array().items(Joi.string().hex().length(24)).min(1)
+        Joi.string().uuid(),
+        Joi.array().items(Joi.string().uuid()).min(1)
     ).required().messages({
         'any.required': 'You must provide at least one user ID.'
     }),
@@ -24,13 +24,14 @@ const broadcastSchema = Joi.object({
     title: Joi.string().trim().min(3).max(100).required(),
     message: Joi.string().trim().min(5).max(500).required(),
     type: Joi.string().optional(),
-    targetAudience: Joi.string().valid('all', 'users_only', 'vendors_only').optional() 
+    targetAudience: Joi.string().valid('all', 'users_only', 'vendors_only').optional(),
+    packageId: Joi.string().uuid().optional(),
+    bookingStatus: Joi.string().optional()
 });
 
 const mongoIdParamSchema = Joi.object({
-    id: Joi.string().hex().length(24).required().messages({
-        'string.hex': 'Invalid ID format. Must be a valid MongoDB ID.',
-        'string.length': 'Invalid ID format. Must be a 24 character MongoDB ID.'
+    id: Joi.string().uuid().required().messages({
+        'string.guid': 'Invalid ID format. Must be a valid UUIDv7.'
     })
 });
 

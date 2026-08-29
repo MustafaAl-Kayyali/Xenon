@@ -50,6 +50,7 @@ app.use("/api/v1/profile", profileRoutes);
 app.use("/api/v1/staff", require("./Routes/staffRoutes"))
 app.use("/api/v1/bookings", bookingRoutes);
 app.use("/api/v1/packages", packageRoutes);
+app.post("/api/v1/admin/auth/register", registerAdminValidator, adminAuth.registerAdmin);
 app.use("/api/v1/admin", adminRoutes);
 app.use("/api/v1/ai", aiRoutes);
 app.use("/api/v1/complaints", complaintRoutes);
@@ -58,8 +59,6 @@ app.use("/api/v1/notifications", notificationRoutes);
 app.use("/api/v1/reports", reportRoutes);
 app.use("/api/v1/analytics", analysisRoutes);
 app.use("/api/v1/payments", paymentRoutes);
-app.post("/api/v1/admin/auth/register", registerAdminValidator, adminAuth.registerAdmin);
-
 app.get('/', (req, res) => {
     res.send('Hello World!');
 });

@@ -125,7 +125,7 @@ exports.submitDowngradeRequestCore = async function (data, session) {
     await Vendor.findByIdAndUpdate(
         data.vendor_id, 
         { 
-            approval_status: 'pending_deletion',
+            vendor_status: 'pending_deletion',
             rejection_reason: data.reason 
         }, 
         { session }

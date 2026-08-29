@@ -55,6 +55,15 @@ exports.deleteReview = async (req, res, next) => {
     }
 };
 
+exports.replyToReview = async (req, res, next) => {
+    try {
+        const result = await reviewCore.replyToReviewCore(req.user, req.params.id, req.body.reply_comment);
+        res.status(200).json(result);
+    } catch (err) {
+        next(err);
+    }
+};
+
 exports.getPackageReviews = async (req, res, next) => {
     try {
         const result = await reviewCore.getPackageReviewsCore(req.params.packageId, req.query);
@@ -82,13 +91,5 @@ exports.updateReviewStatus = async (req, res, next) => {
         });
     } catch (error) {
         next(error);
-    }
-};
-exports.replyToReview = async (req, res, next) => {
-    try {
-        const result = await reviewCore.replyToReviewCore(req.user, req.params.id, req.body.reply_text || req.body.replyText || req.body.reply);
-        res.status(200).json(result);
-    } catch (err) {
-        next(err);
     }
 };

@@ -7,22 +7,14 @@ const UserModel = require("../../Models/UserModel");
 
 
 
-exports.sendOtpCore = async function ({ email, phone, purpose = "registration", length = 6 }) {
-    if (!email && !phone) throw new AppError("Email or phone must be provided", 400);
+exports.sendOtpCore = async function ({ email, purpose = "registration", length = 6 }) {
+    if (!email) throw new AppError("Email must be provided", 400);
 
-    const cleanEmail = email ? String(email).toLowerCase().trim() : undefined;
-    const cleanPhone = phone ? String(phone).trim() : undefined;
+    const cleanEmail = String(email).toLowerCase().trim();
 
-    // Check if user already exists based on purpose
     if (purpose === "registration") {
-        if (cleanEmail) {
-            const existingUser = await UserModel.findOne({ email: cleanEmail });
-            if (existingUser) throw new AppError("Account with this email already exists", 409);
-        }
-        if (cleanPhone) {
-            const existingPhone = await UserModel.findOne({ mobileNumber: cleanPhone });
-            if (existingPhone) throw new AppError("Account with this phone number already exists", 409);
-        }
+        const existingUser = await UserModel.findOne({ email: cleanEmail });
+        if (existingUser) throw new AppError("Account with this email already exists", 409);
     }
 
     const otp = generateOTP(length);
@@ -32,13 +24,12 @@ exports.sendOtpCore = async function ({ email, phone, purpose = "registration", 
 
     await OTPModel.create({
         email: cleanEmail,
-        phone: cleanPhone,
         otp: hashedOtp,
         purpose,
         expiresAt
     });
 
-    if (cleanEmail) {
+    if (true) {
         let subject, headerTitle, subtitle, actionText, iconColor;
 
         if (purpose === 'password_reset') {
@@ -154,9 +145,9 @@ exports.sendOtpCore = async function ({ email, phone, purpose = "registration", 
         await emailService.sendEmail({ to: cleanEmail, subject, text, html });
     }
 
-    console.log(`\n=========================================`);
-    console.log(`🔑 DEV OTP INTERCEPTED: ${otp} for ${cleanEmail || cleanPhone}`);
-    console.log(`=========================================\n`);
+    // console.log(`\n=========================================`);
+    // console.log(`🔑 DEV OTP INTERCEPTED: ${otp} for ${cleanEmail}`);
+    // console.log(`=========================================\n`);
 
     return {
         success: true,
@@ -165,17 +156,14 @@ exports.sendOtpCore = async function ({ email, phone, purpose = "registration", 
     };
 };
 
-exports.verifyOtpCore = async function ({ email, phone, otp, purpose = "registration" }) {
-    if (!email && !phone) throw new AppError("Email or phone must be provided", 400);
+exports.verifyOtpCore = async function ({ email, otp, purpose = "registration" }) {
+    if (!email) throw new AppError("Email must be provided", 400);
     if (!otp) throw new AppError("OTP code is required", 400);
 
-    const cleanEmail = email ? String(email).toLowerCase().trim() : undefined;
-    const cleanPhone = phone ? String(phone).trim() : undefined;
+    const cleanEmail = String(email).toLowerCase().trim();
 
     // 🌟 إضافة شرط للتأكد من أننا لا نجلب OTP تم إيقافه مسبقاً (isDeleted)
-    const query = cleanEmail
-        ? { email: cleanEmail, purpose, isDeleted: { $ne: true } }
-        : { phone: cleanPhone, purpose, isDeleted: { $ne: true } };
+    const query = { email: cleanEmail, purpose, isDeleted: { $ne: true } };
 
     // 1. جلب السجل أولاً
     const otpRecord = await OTPModel.findOne(query).sort({ createdAt: -1 });

@@ -13,11 +13,6 @@ const OTPSchema = new mongoose.Schema({
         trim: true,
         lowercase: true
     },
-    phone: {
-        type: String,
-        required: false,
-        trim: true
-    },
     otp: {
         type: String,
         required: true

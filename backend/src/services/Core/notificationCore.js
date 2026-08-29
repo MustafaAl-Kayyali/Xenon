@@ -30,6 +30,7 @@ exports.vendorSendUpdateCore = async function (vendorId, userId, type, message, 
         const newNotification = await Notification.create([{
             user_id: userId,
             vendor_id: vendorId,
+            title: "Update from Vendor",
             notification_type: type,
             notification_message: message,
             is_read: false

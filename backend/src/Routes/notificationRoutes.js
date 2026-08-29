@@ -1,6 +1,7 @@
 const express = require("express");
 const notificationController = require("../controllers/notificationController");
 const authMiddleware = require("../middlewares/authMiddleware");
+const { validateTargetedNotification, validateBroadcast, validateNotificationIdParam } = require("../validations/NotificationsValidation");
 
 const router = express.Router();
 
@@ -8,11 +9,11 @@ router.use(authMiddleware.protect);
 
 // Only Vendors
 // Note: Accessible by vendor
-router.post("/send-update", notificationController.sendUpdateToClient);
+router.post("/send-update", authMiddleware.restrictTo("vendor"), validateTargetedNotification, notificationController.sendUpdateToClient);
 
 // Admins / System
 // Note: Accessible by admin or vendor but for all users booking it this company 
-router.post("/broadcast", notificationController.sendBroadcastNotification);
+router.post("/broadcast", authMiddleware.restrictTo("admin", "vendor"), validateBroadcast, notificationController.sendBroadcastNotification);
 
 // All Authenticated Users (Admin, User, Vendor)
 // Note: Accessible by user, vendor, admin
@@ -25,8 +26,8 @@ router.patch("/read-all", notificationController.markAllAsRead);
 // Note: Accessible by user, vendor, admin
 router.patch("/delete-all", notificationController.deleteAllNotifications);
 // Note: Accessible by user, vendor, admin
-router.patch("/:id/read", notificationController.markAsRead);
+router.patch("/:id/read", validateNotificationIdParam, notificationController.markAsRead);
 // Note: Accessible by user, vendor, admin
-router.patch("/:id", notificationController.deleteNotification);
+router.patch("/:id", validateNotificationIdParam, notificationController.deleteNotification);
 
 module.exports = router;
