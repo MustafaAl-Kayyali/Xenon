@@ -8,6 +8,7 @@ import 'package:gp/providers/destination_provider.dart';
 import 'package:gp/widgets/destination_card.dart';
 import 'package:gp/widgets/empty_state.dart';
 import 'package:gp/widgets/app_nav_bar.dart';
+import 'package:gp/providers/auth_provider.dart';
 import 'package:gp/providers/profile_provider.dart';
 import 'package:gp/providers/package_provider.dart';
 import 'package:gp/widgets/package_card.dart';
@@ -57,9 +58,10 @@ class _HomePageState extends State<HomePage> {
     final destinationProvider = context.watch<DestinationProvider>();
     final profileProvider = context.watch<ProfileProvider>();
     final packageProvider = context.watch<PackageProvider>();
+    final authProvider = context.watch<AuthProvider>();
     final isDark = settings.themeMode == ThemeMode.dark;
     final isArabic = settings.locale.languageCode == 'ar';
-    final String rawName = profileProvider.profile?.name ?? '';
+    final String rawName = profileProvider.profile?.name ?? authProvider.user?.name ?? '';
     final userName = rawName.isNotEmpty ? rawName.split(' ').first : '';
 
     return Scaffold(

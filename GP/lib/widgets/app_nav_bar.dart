@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:gp/theme/colors.dart';
 import 'package:gp/screens/notifications_page.dart';
+import 'package:gp/screens/ai_advisor_page.dart';
 
 /// Reusable AppBar used across all main pages.
 class AppNavBar extends StatelessWidget implements PreferredSizeWidget {
@@ -48,7 +49,16 @@ class AppNavBar extends StatelessWidget implements PreferredSizeWidget {
       ),
       actions: [
         ...?extraActions,
-        if (showNotifications)
+        if (showNotifications) ...[
+          IconButton(
+            icon: Icon(Icons.auto_awesome, color: contentColor),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AiAdvisorPage()),
+              );
+            },
+          ),
           IconButton(
             icon: Icon(Icons.notifications_outlined, color: contentColor),
             onPressed: () {
@@ -58,6 +68,7 @@ class AppNavBar extends StatelessWidget implements PreferredSizeWidget {
               );
             },
           ),
+        ],
         const SizedBox(width: 8),
       ],
     );

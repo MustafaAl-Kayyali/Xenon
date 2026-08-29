@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gp/theme/colors.dart';
 import 'package:gp/providers/profile_provider.dart';
+import 'package:gp/providers/auth_provider.dart';
 import 'package:gp/widgets/app_textfield.dart';
 import 'package:gp/widgets/compass_loading_overlay.dart';
 
@@ -20,8 +21,10 @@ class _EditProfilePageState extends State<EditProfilePage> {
   void initState() {
     super.initState();
     final profile = context.read<ProfileProvider>().profile;
-    _nameController = TextEditingController(text: profile?.name ?? '');
-    _phoneController = TextEditingController(text: profile?.phone ?? '');
+    final user = context.read<AuthProvider>().user;
+    
+    _nameController = TextEditingController(text: profile?.name ?? user?.name ?? '');
+    _phoneController = TextEditingController(text: profile?.phone ?? user?.phone ?? '');
   }
 
   @override

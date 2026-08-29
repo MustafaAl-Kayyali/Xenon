@@ -27,7 +27,9 @@ class ProfileProvider with ChangeNotifier {
     try {
       final response = await ProfileService.getProfile();
       if (response['data'] != null) {
-        _profile = UserModel.fromJson(response['data']);
+        final profilePayload = response['data']['profile'] ?? response['data'];
+        final userData = profilePayload['user'] ?? profilePayload;
+        _profile = UserModel.fromJson(userData);
         notifyListeners();
       }
     } on ApiException catch (e) {
@@ -54,7 +56,9 @@ class ProfileProvider with ChangeNotifier {
     try {
       final response = await ProfileService.updateProfile(data);
       if (response['data'] != null) {
-        _profile = UserModel.fromJson(response['data']);
+        final profilePayload = response['data']['profile'] ?? response['data'];
+        final userData = profilePayload['user'] ?? profilePayload;
+        _profile = UserModel.fromJson(userData);
         if (context.mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(content: Text('Profile updated successfully'), backgroundColor: Colors.green),
@@ -87,6 +91,26 @@ class ProfileProvider with ChangeNotifier {
       if (context.mounted) _showErrorSnackBar(context, e.message);
     } catch (e) {
       if (context.mounted) _showErrorSnackBar(context, 'Failed to change password');
+    }
+    _setLoading(false);
+    return false;
+  }
+
+  Future<bool> deleteProfile(BuildContext context) async {
+    _setLoading(true);
+    try {
+      await ProfileService.deleteProfile();
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Account deleted successfully'), backgroundColor: Colors.green),
+        );
+        await logout(context);
+      }
+      return true;
+    } on ApiException catch (e) {
+      if (context.mounted) _showErrorSnackBar(context, e.message);
+    } catch (e) {
+      if (context.mounted) _showErrorSnackBar(context, 'Failed to delete account');
     }
     _setLoading(false);
     return false;

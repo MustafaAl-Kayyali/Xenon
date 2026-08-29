@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:gp/theme/colors.dart';
 import 'package:gp/providers/profile_provider.dart';
+import 'package:gp/providers/auth_provider.dart';
 import 'package:gp/providers/settings_provider.dart';
 import 'package:gp/widgets/compass_loading_overlay.dart';
 
@@ -20,6 +21,7 @@ class _ProfilePageContent extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<ProfileProvider>();
+    final authProvider = context.watch<AuthProvider>();
     final settings = context.watch<SettingsProvider>();
     final isDark = Theme.of(context).brightness == Brightness.dark;
     final isArabic = settings.locale.languageCode == 'ar';
@@ -92,7 +94,7 @@ class _ProfilePageContent extends StatelessWidget {
 
                 // User Info
                 Text(
-                  provider.profile?.name ?? 'User Name',
+                  provider.profile?.name ?? authProvider.user?.name ?? 'User Name',
                   style: TextStyle(
                     color: isDark
                         ? AppColors.textPrimaryDark
@@ -103,7 +105,7 @@ class _ProfilePageContent extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  provider.profile?.email ?? 'user@email.com',
+                  provider.profile?.email ?? authProvider.user?.email ?? 'user@email.com',
                   style: TextStyle(
                     color: isDark
                         ? AppColors.textSecondaryDark
@@ -130,8 +132,8 @@ class _ProfilePageContent extends StatelessWidget {
                   isDark: isDark,
                 ),
                 _buildMenuTile(
-                  icon: Icons.lock_reset_outlined,
-                  title: isArabic ? 'إعادة تعيين كلمة المرور' : 'Reset Password',
+                  icon: Icons.lock_outline,
+                  title: isArabic ? 'تغيير كلمة المرور' : 'Change Password',
                   onTap: () => provider.navigateToResetPassword(context),
                   isDark: isDark,
                 ),
@@ -159,6 +161,63 @@ class _ProfilePageContent extends StatelessWidget {
                         borderRadius: BorderRadius.circular(16),
                       ),
                       elevation: 0,
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // Delete Account Button
+                SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    onPressed: () {
+                      showDialog(
+                        context: context,
+                        builder: (ctx) => AlertDialog(
+                          backgroundColor: isDark ? AppColors.surfaceDark : AppColors.surfaceLight,
+                          title: Text(
+                            isArabic ? 'حذف الحساب؟' : 'Delete Account?',
+                            style: TextStyle(color: isDark ? Colors.white : Colors.black),
+                          ),
+                          content: Text(
+                            isArabic 
+                              ? 'هل أنت متأكد أنك تريد حذف حسابك؟ هذا الإجراء لا يمكن التراجع عنه.'
+                              : 'Are you sure you want to delete your account? This action cannot be undone.',
+                            style: TextStyle(color: isDark ? Colors.white70 : Colors.black87),
+                          ),
+                          actions: [
+                            TextButton(
+                              onPressed: () => Navigator.pop(ctx),
+                              child: Text(isArabic ? 'إلغاء' : 'Cancel'),
+                            ),
+                            TextButton(
+                              onPressed: () {
+                                Navigator.pop(ctx);
+                                provider.deleteProfile(context);
+                              },
+                              style: TextButton.styleFrom(foregroundColor: Colors.red),
+                              child: Text(isArabic ? 'حذف' : 'Delete'),
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                    icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    label: Text(
+                      isArabic ? 'حذف الحساب' : 'Delete Account',
+                      style: const TextStyle(
+                        color: Colors.red,
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: const BorderSide(color: Colors.red),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(16),
+                      ),
                     ),
                   ),
                 ),

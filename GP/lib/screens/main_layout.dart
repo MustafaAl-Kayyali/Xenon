@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:provider/provider.dart';
 import 'package:gp/theme/colors.dart';
 import 'package:gp/screens/home_page.dart';
@@ -17,6 +18,7 @@ class MainLayout extends StatefulWidget {
 
 class _MainLayoutState extends State<MainLayout> {
   int _currentIndex = 0;
+  DateTime? _lastPressedAt;
 
   @override
   void initState() {
@@ -41,36 +43,67 @@ class _MainLayoutState extends State<MainLayout> {
     final isDark = settings.themeMode == ThemeMode.dark;
     final isArabic = settings.locale.languageCode == 'ar';
 
-    return Scaffold(
-      body: _pages[_currentIndex],
-      bottomNavigationBar: NavigationBar(
-        selectedIndex: _currentIndex,
-        onDestinationSelected: (index) => setState(() => _currentIndex = index),
-        backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
-        indicatorColor: AppColors.primaryRust.withValues(alpha: 0.2),
-        elevation: 10,
-        destinations: [
-          NavigationDestination(
-            icon: const Icon(Icons.home_outlined),
-            selectedIcon: const Icon(Icons.home, color: AppColors.primaryRust),
-            label: isArabic ? 'الرئيسية' : 'Home',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.explore_outlined),
-            selectedIcon: const Icon(Icons.explore, color: AppColors.primaryRust),
-            label: isArabic ? 'استكشف' : 'Explore',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.person_outline),
-            selectedIcon: const Icon(Icons.person, color: AppColors.primaryRust),
-            label: isArabic ? 'حسابي' : 'Profile',
-          ),
-          NavigationDestination(
-            icon: const Icon(Icons.settings_outlined),
-            selectedIcon: const Icon(Icons.settings, color: AppColors.primaryRust),
-            label: isArabic ? 'الإعدادات' : 'Settings',
-          ),
-        ],
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
+
+        if (_currentIndex != 0) {
+          setState(() {
+            _currentIndex = 0;
+          });
+          return;
+        }
+
+        final now = DateTime.now();
+        if (_lastPressedAt == null || now.difference(_lastPressedAt!) > const Duration(seconds: 2)) {
+          _lastPressedAt = now;
+          if (context.mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(isArabic ? 'اضغط مرة أخرى للخروج' : 'Press back again to exit'),
+                duration: const Duration(seconds: 2),
+                behavior: SnackBarBehavior.floating,
+              ),
+            );
+          }
+          return;
+        }
+
+        // Exit the app if pressed twice within 2 seconds
+        SystemNavigator.pop();
+      },
+      child: Scaffold(
+        body: _pages[_currentIndex],
+        bottomNavigationBar: NavigationBar(
+          selectedIndex: _currentIndex,
+          onDestinationSelected: (index) => setState(() => _currentIndex = index),
+          backgroundColor: isDark ? AppColors.surfaceDark : Colors.white,
+          indicatorColor: AppColors.primaryRust.withValues(alpha: 0.2),
+          elevation: 10,
+          destinations: [
+            NavigationDestination(
+              icon: const Icon(Icons.home_outlined),
+              selectedIcon: const Icon(Icons.home, color: AppColors.primaryRust),
+              label: isArabic ? 'الرئيسية' : 'Home',
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.explore_outlined),
+              selectedIcon: const Icon(Icons.explore, color: AppColors.primaryRust),
+              label: isArabic ? 'استكشف' : 'Explore',
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.person_outline),
+              selectedIcon: const Icon(Icons.person, color: AppColors.primaryRust),
+              label: isArabic ? 'حسابي' : 'Profile',
+            ),
+            NavigationDestination(
+              icon: const Icon(Icons.settings_outlined),
+              selectedIcon: const Icon(Icons.settings, color: AppColors.primaryRust),
+              label: isArabic ? 'الإعدادات' : 'Settings',
+            ),
+          ],
+        ),
       ),
     );
   }
