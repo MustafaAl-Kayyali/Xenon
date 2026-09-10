@@ -31,6 +31,5 @@ Each component has its own setup instructions. Please navigate to the respective
 - [AI Service Setup](./ai/README.md)
 
 ## 🛡️ Security & Scalability
-- **Docker Ready:** The backend utilizes `dockerode` indicating containerization capabilities.
 - **Secure Data:** Advanced XSS cleaning, rate limiting, and parameter pollution prevention (`hpp`) are integrated.
 - **AI Safety:** The AI service is strictly scoped to prevent hallucination, declining any requests outside the bounds of verified travel package data.
