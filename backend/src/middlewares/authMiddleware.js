@@ -7,7 +7,6 @@ const Vendor = require("../Models/VendorModel");
 
 exports.protect = async (req, res, next) => {
     try {
-        console.log("PROTECT HIT ON:", req.originalUrl);
         let token;
         if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
             token = req.headers.authorization.split(" ")[1];

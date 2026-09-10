@@ -1,5 +1,6 @@
 const notificationCore = require("../services/Core/notificationCore");
 const AppError = require("../utils/AppError");
+const Booking = require("../Models/BookingModel");
 
 exports.sendUpdateToClient = async (req, res, next) => {
     try {
@@ -10,6 +11,10 @@ exports.sendUpdateToClient = async (req, res, next) => {
             return next(new AppError("Only vendors can send updates to clients.", 403));
         }
 
+        if (!await Booking.exists({ vendor_id: vendorId, user_id: userId })) {
+            return next(new AppError("You can only notify customers with bookings at your company.", 403));
+        }
+
         const result = await notificationCore.vendorSendUpdateCore(vendorId, userId, type, message);
         return res.status(201).json({ status: "success", data: result });
     } catch (error) {
@@ -18,19 +23,12 @@ exports.sendUpdateToClient = async (req, res, next) => {
 };
 
 exports.sendNotification = async (req, res, next) => {
-    try {
-        const { type, message, title } = req.body;
-        const result = await notificationCore.sendNotificationBroadcastCore(req.user._id, req.user.role, { type, message, title });
-        return res.status(201).json({ status: "success", data: result });
-    } catch (error) {
-        next(error);
-    }
+    return exports.sendBroadcastNotification(req, res, next);
 };
 
 exports.sendBroadcastNotification = async (req, res, next) => {
     try {
-        const { type, message, title, targetAudience, packageId, bookingStatus } = req.body;
-        const result = await notificationCore.sendNotificationBroadcastCore(req.user._id, req.user.role, { type, message, title, targetAudience, packageId, bookingStatus });
+        const result = await notificationCore.sendNotificationBroadcastCore(req.user._id, req.user.role, req.body);
         return res.status(201).json(result);
     } catch (error) {
         next(error);

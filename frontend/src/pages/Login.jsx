@@ -32,7 +32,12 @@ export default function Login() {
     }
     setStatus({ loading: true, message: '', type: '' })
     try {
-      const result = await authApi.login({ email: form.email.trim().toLowerCase(), password: form.password })
+      const result = await authApi.login({
+        email: form.email.trim().toLowerCase(),
+        password: form.password,
+        role,
+        device_type: 'web',
+      })
       const token = result.data?.token
       if (!token) throw new Error('The API did not return an authentication token.')
       const authenticatedRole = getPortalRole(token)
@@ -63,7 +68,7 @@ export default function Login() {
               ))}
             </div>
             <form className="form-stack" onSubmit={submit}>
-              <div className="field"><label>Email Address</label><div className="input-wrap"><Mail size={17}/><input className="has-icon" type="email" placeholder="hello@example.com" value={form.email} onChange={(e) => setForm({...form,email:e.target.value})} required /></div></div>
+              <div className="field"><label htmlFor="login-email-address">Email Address</label><div className="input-wrap"><Mail size={17}/><input id="login-email-address" className="has-icon" type="email" placeholder="hello@example.com" value={form.email} onChange={(e) => setForm({...form,email:e.target.value})} required /></div></div>
               <div><div className="label-line"><span /><Link className="text-link" to={ROUTES.FORGOT_PASSWORD}>Forgot?</Link></div><PasswordField value={form.password} onChange={(e) => setForm({...form,password:e.target.value})} showStrength={false} autoComplete="current-password" /></div>
               {status.message && <p className={`form-message ${status.type}`} role="status">{status.message}</p>}
               <button className="primary-button" disabled={status.loading}>{status.loading ? 'Signing in…' : <>Sign In <ArrowRight size={15}/></>}</button>

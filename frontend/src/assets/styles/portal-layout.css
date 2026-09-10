@@ -1,0 +1,54 @@
+/* Keep the document as the scroll container so portal navigation stays sticky. */
+html, body, #root {
+  overflow-x: clip;
+}
+
+.vendor-app, .admin-layout {
+  overflow: visible;
+  grid-template-columns: 288px minmax(0, 1fr);
+}
+
+.vendor-sidebar, .admin-sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  height: 100vh;
+  height: 100dvh;
+  min-height: 0;
+}
+
+.vendor-nav, .admin-sidebar nav {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior-y: contain;
+}
+
+.vendor-logo, .vendor-kicker, .vendor-logout, .admin-brand, .admin-logout {
+  flex-shrink: 0;
+}
+
+.vendor-nav a, .admin-sidebar nav a { flex-shrink: 0; }
+.vendor-main > .admin-header { margin-bottom: 0; }
+
+/* Compact horizontal navigation stays reachable without covering the whole phone. */
+@media (max-width: 950px) {
+  .admin-layout { grid-template-columns: 82px minmax(0, 1fr); }
+}
+
+@media (max-width: 900px) {
+  .vendor-app { grid-template-columns: minmax(0, 1fr); }
+  .vendor-sidebar { height: auto; padding-block: 10px; gap: 6px; box-shadow: 0 2px 8px #422e1810; }
+  .vendor-logo { font-size: 24px; }
+  .vendor-kicker { display: none; }
+  .vendor-nav { margin: 0; overflow-x: auto; overflow-y: hidden; }
+  .vendor-logout { min-height: 32px; }
+}
+
+@media (max-width: 650px) {
+  .admin-layout { display: block; }
+  .admin-sidebar { height: auto; padding-block: 8px; box-shadow: 0 2px 8px #422e1810; }
+  .admin-brand { padding-block: 4px; }
+  .admin-brand small { display: none; }
+  .admin-sidebar nav { padding-block: 6px; overflow-y: hidden; }
+  .admin-logout { display: flex; min-height: 32px; }
+}

@@ -39,8 +39,8 @@ export default function ForgotPassword() {
         <p>Enter the email used by your vendor or administrator account.</p>
         <form className="form-stack" onSubmit={submit} noValidate>
           <div className="field">
-            <label>Email address</label>
-            <input type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
+            <label htmlFor="forgotpassword-email-address">Email address</label>
+            <input id="forgotpassword-email-address" type="email" autoComplete="email" value={email} onChange={(event) => setEmail(event.target.value)} required />
           </div>
           {status.message && <p className={`form-message ${status.type}`} role="status">{status.message}</p>}
           <button className="primary-button" disabled={status.loading}>{status.loading ? 'Requesting…' : 'Request recovery email'}</button>

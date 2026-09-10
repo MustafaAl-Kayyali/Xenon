@@ -1,7 +1,7 @@
 const express = require("express");
 const notificationController = require("../controllers/notificationController");
 const authMiddleware = require("../middlewares/authMiddleware");
-const { validateTargetedNotification, validateBroadcast, validateNotificationIdParam } = require("../validations/NotificationsValidation");
+const validation = require('../validations/NotificationsValidation');
 
 const router = express.Router();
 
@@ -9,25 +9,25 @@ router.use(authMiddleware.protect);
 
 // Only Vendors
 // Note: Accessible by vendor
-router.post("/send-update", authMiddleware.restrictTo("vendor"), validateTargetedNotification, notificationController.sendUpdateToClient);
+router.post("/send-update", authMiddleware.restrictTo('vendor'), validation.validateTargetedNotification, notificationController.sendUpdateToClient);
 
 // Admins / System
 // Note: Accessible by admin or vendor but for all users booking it this company 
-router.post("/broadcast", authMiddleware.restrictTo("admin", "vendor"), validateBroadcast, notificationController.sendBroadcastNotification);
+router.post("/broadcast", authMiddleware.restrictTo('admin', 'vendor'), validation.validateBroadcast, notificationController.sendBroadcastNotification);
 
 // All Authenticated Users (Admin, User, Vendor)
 // Note: Accessible by user, vendor, admin
-router.get("/", notificationController.getMyNotifications);
+router.get("/", validation.validateNotificationQuery, notificationController.getMyNotifications);
 // Note: Accessible by admin or vendor to see notifications they sent
-router.get("/sent", authMiddleware.restrictTo("admin", "vendor"), notificationController.getSentNotifications);
+router.get("/sent", authMiddleware.restrictTo("admin", "vendor"), validation.validateNotificationQuery, notificationController.getSentNotifications);
 // Specific named routes MUST come before the /:id wildcard
 // Note: Accessible by user, vendor, admin
 router.patch("/read-all", notificationController.markAllAsRead);
 // Note: Accessible by user, vendor, admin
 router.patch("/delete-all", notificationController.deleteAllNotifications);
 // Note: Accessible by user, vendor, admin
-router.patch("/:id/read", validateNotificationIdParam, notificationController.markAsRead);
+router.patch("/:id/read", validation.validateNotificationIdParam, notificationController.markAsRead);
 // Note: Accessible by user, vendor, admin
-router.patch("/:id", validateNotificationIdParam, notificationController.deleteNotification);
+router.patch("/:id", validation.validateNotificationIdParam, notificationController.deleteNotification);
 
 module.exports = router;

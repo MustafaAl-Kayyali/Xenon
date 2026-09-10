@@ -4,7 +4,21 @@ export function getCollection(payload) {
 
   if (Array.isArray(value)) return value
   if (Array.isArray(value?.data)) return value.data
-  return value?.packages || value?.bookings || value?.notifications || value?.complaints || value?.reviews || value?.payments || value?.employees || value?.results || []
+  const keys = ['packages', 'bookings', 'notifications', 'complaints', 'reviews', 'payments', 'employees', 'results']
+  return keys.map((key) => value?.[key]).find(Array.isArray) || []
+}
+
+// Older package details may be saved as JSON or plain text rather than arrays.
+export function getDetailItems(value) {
+  if (Array.isArray(value)) return value.filter((item) => item !== null && item !== undefined)
+  if (typeof value !== 'string' || !value.trim()) return []
+  try {
+    const parsed = JSON.parse(value)
+    if (Array.isArray(parsed)) return getDetailItems(parsed)
+  } catch {
+    // Plain text remains readable without throwing during rendering.
+  }
+  return [value]
 }
 
 export function getRecord(payload) {

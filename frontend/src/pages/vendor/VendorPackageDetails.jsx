@@ -6,7 +6,7 @@ import VendorShell from '../../components/vendor/VendorShell.jsx'
 import { VendorNotice, VendorStatus } from '../../components/vendor/VendorUi.jsx'
 import useApi from '../../hooks/useApi.js'
 import { packageApi } from '../../services/api.js'
-import { getPackageImage, getRecord } from '../../utils/vendorData.js'
+import { getDetailItems, getPackageImage, getRecord } from '../../utils/vendorData.js'
 
 function getDetails(packageItem) {
   return packageItem.package_details || packageItem.details || packageItem
@@ -23,6 +23,8 @@ export default function VendorPackageDetails() {
   const packageState = useApi(() => packageApi.getById(id), [id])
   const packageItem = getRecord(packageState.data)
   const details = getDetails(packageItem)
+  const itinerary = getDetailItems(details.itinerary)
+  const services = getDetailItems(details.included_services)
 
   async function removePackage() {
     if (!window.confirm('Pause or remove this package?')) return
@@ -52,6 +54,7 @@ export default function VendorPackageDetails() {
               <span><b>Meeting point</b>{details.meeting_point || '—'}</span>
             </div>
             <div className="row-actions">
+              <Link className="vendor-button" to="/vendor/packages/new">Create another package</Link>
               <Link className="vendor-button" to={`/vendor/packages/${id}/edit`}>Edit package</Link>
               <button className="vendor-button danger" onClick={removePackage}>Remove package</button>
             </div>
@@ -60,9 +63,9 @@ export default function VendorPackageDetails() {
       )}
       {!packageState.loading && !packageState.error && (
         <section className="vendor-grid two">
-          <article className="vendor-card detail-section"><h2>Itinerary</h2>{details.itinerary?.length ? <ol className="detail-list">{details.itinerary.map((item, index) => <li key={item.day_number || index}><strong>{item.title || `Day ${item.day_number || index + 1}`}</strong><span>{detailText(item)}</span></li>)}</ol> : <p className="vendor-hint">No itinerary has been added.</p>}</article>
-          <article className="vendor-card detail-section"><h2>What is included</h2>{details.included_services?.length ? <ul className="detail-list compact">{details.included_services.map((item, index) => <li key={index}>{detailText(item)}</li>)}</ul> : <p className="vendor-hint">No included services listed.</p>}</article>
-          <article className="vendor-card detail-section"><h2>Cancellation policy</h2><p>{details.cancellation_policy || 'Standard cancellation rules apply.'}</p></article>
+          <article className="vendor-card detail-section"><h2>Itinerary</h2>{itinerary.length ? <ol className="detail-list">{itinerary.map((item, index) => <li key={item.day_number || index}><strong>{item.title || `Day ${item.day_number || index + 1}`}</strong><span>{detailText(item)}</span></li>)}</ol> : <p className="vendor-hint">No itinerary has been added.</p>}</article>
+          <article className="vendor-card detail-section"><h2>What is included</h2>{services.length ? <ul className="detail-list compact">{services.map((item, index) => <li key={index}>{detailText(item)}</li>)}</ul> : <p className="vendor-hint">No included services listed.</p>}</article>
+          <article className="vendor-card detail-section"><h2>Cancellation policy</h2><p>{details.cancellation_policy || 'No cancellation policy has been provided.'}</p></article>
         </section>
       )}
     </VendorShell>

@@ -1,5 +1,5 @@
 // Libraries
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 
 // Components and services
@@ -7,7 +7,7 @@ import VendorShell from '../../components/vendor/VendorShell.jsx'
 import { VendorField } from '../../components/vendor/VendorUi.jsx'
 import { packageApi } from '../../services/api.js'
 import { localToday, validatePackage } from '../../utils/formValidation.js'
-import { getPackageId, getRecord } from '../../utils/vendorData.js'
+import { getDetailItems, getPackageId, getRecord } from '../../utils/vendorData.js'
 
 // Constants
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024
@@ -55,7 +55,7 @@ function normalizePackage(record) {
 function formatDetails(value) {
   if (!value) return ''
   if (!Array.isArray(value)) return String(value)
-  return value.map((item) => item.activities || item.description || item.title || String(item)).join('\n')
+  return getDetailItems(value).map((item) => item.activities || item.description || item.title || String(item)).join('\n')
 }
 
 function nonEmptyLines(value) {
@@ -72,19 +72,41 @@ function serializeDetails(key, value) {
   return value
 }
 
+function packageErrorMessage(error) {
+  const serverMessage = String(error?.serverMessage || error?.message || '')
+  if (/cloudinary|cloud_name|api[_ ]?key|upload|image.*(storage|service)/i.test(serverMessage)) {
+    return 'The package was not saved because its cover image could not be uploaded. Check the backend Cloudinary configuration and try again.'
+  }
+  return error?.message || 'The package could not be saved. Please try again.'
+}
+
 // Page component
 export default function VendorPackageForm({ edit = false }) {
   const { packageId: id } = useParams()
   const navigate = useNavigate()
   const [form, setForm] = useState(EMPTY_PACKAGE)
   const [status, setStatus] = useState({ loading: false, message: '', type: '' })
+  const [loadedId, setLoadedId] = useState('')
+  const submitting = useRef(false)
 
   useEffect(() => {
-    if (!edit || !id) return
-    packageApi
-      .getById(id)
-      .then((data) => setForm(normalizePackage(getRecord(data))))
-      .catch((error) => setStatus({ loading: false, message: error.message, type: 'error' }))
+    let active = true
+    Promise.resolve().then(async () => {
+      if (!active) return
+      setStatus({ loading: false, message: '', type: '' })
+      setForm(EMPTY_PACKAGE)
+      setLoadedId('')
+      if (!edit || !id) return
+      try {
+        const data = await packageApi.getById(id)
+        if (!active) return
+        setForm(normalizePackage(getRecord(data)))
+        setLoadedId(id)
+      } catch (error) {
+        if (active) setStatus({ loading: false, message: error.message, type: 'error' })
+      }
+    })
+    return () => { active = false }
   }, [edit, id])
 
   function updateField(key) {
@@ -96,12 +118,14 @@ export default function VendorPackageForm({ edit = false }) {
 
   async function submitPackage(event) {
     event.preventDefault()
+    if (submitting.current || (edit && loadedId !== id)) return
     const validationError = validatePackage(form, edit, ALLOWED_IMAGE_TYPES, MAX_IMAGE_BYTES)
     if (validationError) {
       setStatus({ loading: false, message: validationError, type: 'error' })
       return
     }
 
+    submitting.current = true
     setStatus({ loading: true, message: '', type: '' })
     const body = new FormData()
     Object.entries(form).forEach(([key, value]) => {
@@ -114,7 +138,10 @@ export default function VendorPackageForm({ edit = false }) {
       const savedId = getPackageId(getRecord(result)) || id
       navigate(savedId ? `/vendor/packages/${savedId}` : '/vendor/packages')
     } catch (error) {
-      setStatus({ loading: false, message: error.message, type: 'error' })
+      setStatus({ loading: false, message: packageErrorMessage(error), type: 'error' })
+    } finally {
+      submitting.current = false
+      setStatus((current) => ({ ...current, loading: false }))
     }
   }
 
@@ -163,7 +190,6 @@ export default function VendorPackageForm({ edit = false }) {
               <select value={form.package_status} onChange={updateField('package_status')}>
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
-                <option value="draft">Draft</option>
               </select>
             </label>
             <VendorField label="Maximum travellers" type="number" min="1" max="100" step="1" value={form.max_people} onChange={updateField('max_people')} required />
@@ -174,7 +200,8 @@ export default function VendorPackageForm({ edit = false }) {
           </label>
           <p className="vendor-hint">JPEG, PNG, or WebP. Maximum size: 5 MB.</p>
           {status.message && <p className={`form-message ${status.type}`} role="alert">{status.message}</p>}
-          <button className="vendor-button" disabled={status.loading}>
+          {edit && loadedId !== id && !status.message && <p role="status">Loading package…</p>}
+          <button className="vendor-button" disabled={status.loading || (edit && loadedId !== id)}>
             {status.loading ? 'Saving…' : edit ? 'Save changes' : 'Create package'}
           </button>
         </aside>

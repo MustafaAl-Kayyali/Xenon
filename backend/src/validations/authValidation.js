@@ -188,26 +188,29 @@ exports.deleteAccountValidation = function (req, res, next) {
 
 exports.sendOtpValidation = function (req, res, next) {
     const Schema = joi.object({
-        email: joi.string().email().lowercase().trim().required().messages({
-            "string.email": "Please provide a valid email address",
-            "any.required": "Email is required to receive the OTP"
+        email: joi.string().email().lowercase().trim().messages({
+            "string.email": "Please provide a valid email address"
         }),
+        phone: joi.string().regex(jordanMobileRegex).messages(mobileMessages),
         purpose: joi.string().valid("registration", "password_reset", "login", "account_verification").default("registration"),
         length: joi.number().min(6).max(6).optional()
+    }).or('email', 'phone').messages({
+        'object.missing': 'You must provide either an email or a phone number to receive the OTP'
     });
     validateMiddleware(Schema, req.body, req, next);
 };
 
 exports.verifyOtpValidation = function (req, res, next) {
     const Schema = joi.object({
-        email: joi.string().email().lowercase().trim().required().messages({
-            "any.required": "Email is required to verify the OTP"
-        }),
+        email: joi.string().email().lowercase().trim(),
+        phone: joi.string().regex(jordanMobileRegex).messages(mobileMessages),
         otp: joi.string().trim().required().messages({
             "any.required": "OTP code is required",
             "string.empty": "OTP code cannot be empty"
         }),
         purpose: joi.string().valid("registration", "password_reset", "login", "account_verification").default("registration")
+    }).or('email', 'phone').messages({
+        'object.missing': 'You must provide either an email or a phone number to verify the OTP'
     });
     validateMiddleware(Schema, req.body, req, next);
 };

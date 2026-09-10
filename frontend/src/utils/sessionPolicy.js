@@ -1,4 +1,4 @@
-const TOKEN_FAILURE_PATTERN = /(?:invalid|expired|missing)\s+(?:access\s+)?token|token\s+(?:is\s+)?(?:invalid|expired)|not logged in|login session.*expired|belonging to this token no longer exists/i
+const TOKEN_FAILURE_PATTERN = /(?:invalid|expired|missing)\s+(?:access\s+)?token|token\s+(?:(?:is|has)\s+)?(?:invalid|expired)|not logged in|login session.*expired|belonging to this token no longer exists/i
 
 // A 401 can also mean incorrect credentials or an incorrect current password.
 // Only token-specific failures should destroy an authenticated browser session.

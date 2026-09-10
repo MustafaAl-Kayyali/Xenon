@@ -1,10 +1,11 @@
 // Libraries
 import { Check, Eye, EyeOff, LockKeyhole, X } from 'lucide-react'
-import { useMemo, useState } from 'react'
+import { useId, useMemo, useState } from 'react'
 
 // Shared password input and strength feedback
 export default function PasswordField({ label = 'Password', value, onChange, placeholder = '••••••••', required = true, showStrength = true, autoComplete = 'new-password' }) {
   const [visible, setVisible] = useState(false)
+  const inputId = useId()
   const [active, setActive] = useState(false)
   // Password rules used by the live meter
   const rules = useMemo(() => [
@@ -29,10 +30,11 @@ export default function PasswordField({ label = 'Password', value, onChange, pla
 
   return (
     <div className="field">
-      <label>{label}</label>
+      <label htmlFor={inputId}>{label}</label>
       <div className="input-wrap">
         <LockKeyhole size={17} />
         <input
+          id={inputId}
           className="has-icon has-eye"
           type={visible ? 'text' : 'password'}
           autoComplete={autoComplete}
@@ -42,13 +44,13 @@ export default function PasswordField({ label = 'Password', value, onChange, pla
           onBlur={() => setActive(Boolean(value))}
           placeholder={placeholder}
           required={required}
-          aria-describedby={showStrength ? `${label.replace(/\s+/g, '-').toLowerCase()}-strength` : undefined}
+          aria-describedby={showStrength ? `${inputId}-strength` : undefined}
         />
         <button className="eye" type="button" onClick={() => setVisible((current) => !current)} aria-label={visible ? 'Hide password' : 'Show password'}>
           {visible ? <EyeOff size={18} /> : <Eye size={18} />}
         </button>
       </div>
-      {showStrength && <div className={`password-strength strength-${strengthLabel.toLowerCase().replace(' ', '-')}`} id={`${label.replace(/\s+/g, '-').toLowerCase()}-strength`}>
+      {showStrength && <div className={`password-strength strength-${strengthLabel.toLowerCase().replace(' ', '-')}`} id={`${inputId}-strength`}>
         <div className="password-strength-heading">
           <div className="password-meter" aria-hidden="true">
             {rules.map((rule) => <span className={rule.passed ? 'passed' : ''} key={rule.label} />)}

@@ -46,7 +46,7 @@ function collectionFrom(payload) {
   return []
 }
 
-const BASE_URL = resolveBaseUrl(import.meta.env.VITE_API_URL)
+const BASE_URL = resolveBaseUrl(import.meta.env?.VITE_API_URL)
 let refreshPromise = null
 
 async function refreshAuthSession() {
@@ -95,7 +95,12 @@ async function request(path, options = {}, allowRefresh = true) {
     window.clearTimeout(timeout)
   }
 
-  const payload = await response.json().catch(() => ({}))
+  const payload = await response.json().catch(() => {
+    if (response.ok && response.status !== 204) {
+      throw new Error('The API returned an unreadable response. Check the API address or proxy configuration and try again.')
+    }
+    return {}
+  })
   const serverMessage = payload.message || payload.error || ''
   const canRefresh = allowRefresh
     && response.status === 401
@@ -107,7 +112,9 @@ async function request(path, options = {}, allowRefresh = true) {
     try {
       await refreshAuthSession()
       return request(path, options, false)
-    } catch {
+    } catch (error) {
+      // An outage or rate limit is not proof that the refresh credential is invalid.
+      if (![400, 401, 403].includes(error.status)) throw error
       storage.clearAuth(false)
     }
   }
@@ -224,9 +231,9 @@ export const reviewApi = {
 
 // Analytics routes
 export const analyticsApi = {
-  vendor: (query) => request(withQuery('/analysis/vendor/dashboard', query)),
-  admin: (query) => request(withQuery('/analysis/admin/dashboard', query)),
-  package: (packageId, query) => request(withQuery(`/analysis/packages/${packageId}`, query)),
+  vendor: (query) => request(withQuery('/analytics/vendor/dashboard', query)),
+  admin: (query) => request(withQuery('/analytics/admin/dashboard', query)),
+  package: (packageId, query) => request(withQuery(`/analytics/packages/${packageId}`, query)),
 }
 
 // Staff routes shared by vendors and administrators

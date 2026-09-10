@@ -132,16 +132,9 @@ exports.loginCore = async function (email, password, roleExpected, deviceInfo = 
 
     
         if (roleExpected && !checkRole(user.role, [roleExpected])) {
-            if (roleExpected === "vendor" && user.role === "user") {
-                const vendorProfile = await VendorModel.findOne({ owner_user_id: user._id });
-                if (!vendorProfile) {
-                    throw new AppError("You are not authorized to login to this portal", 403);
-                }
-            } else {
-                throw new AppError("You are not authorized to login to this portal", 403);
-            }
+            throw new AppError("You are not authorized to login to this portal", 403);
         }
-        if (checkRole(user.role, ["user"]) && !isMobile && roleExpected !== "vendor") {
+        if (checkRole(user.role, ["user"]) && !isMobile) {
             throw new AppError("Access Denied: Tourist must login via the Xenon App.", 403);
         }
         // Allow users to login on Web (they might be accessing the vendor onboarding form)

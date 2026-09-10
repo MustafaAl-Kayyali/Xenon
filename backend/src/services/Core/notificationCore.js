@@ -1,4 +1,3 @@
-const mongoose = require("mongoose");
 const Notification = require("../../Models/NotificationModel"); 
 const Booking = require("../../Models/BookingModel"); 
 const User = require("../../Models/UserModel"); 
@@ -7,6 +6,17 @@ const { checkRole } = require("../../utils/checkvalidete");
 
 // 🌟 استدعاء إعدادات Firebase من مجلد Config
 const admin = require("../../config/firebaseConfig"); 
+
+// Inbox actions always belong to the recipient, never the sender.
+function recipientId(user) {
+    const id = user.role === 'vendor' ? user.owner_user_id : user._id;
+    if (!id) throw new AppError('Notification recipient identity is unavailable.', 403);
+    return id;
+}
+
+function visibleNotifications(filter) {
+    return { ...filter, isDeleted: { $ne: true }, createdAt: { $gte: new Date(Date.now() - 60 * 24 * 60 * 60 * 1000) } };
+}
 
 // ==========================================
 // 1. الإرسال الفردي (التحديثات المباشرة) + Firebase
@@ -30,8 +40,8 @@ exports.vendorSendUpdateCore = async function (vendorId, userId, type, message, 
         const newNotification = await Notification.create([{
             user_id: userId,
             vendor_id: vendorId,
-            title: "Update from Vendor",
-            notification_type: type,
+            title: 'Update from your tour provider',
+            notification_type: type || 'update',
             notification_message: message,
             is_read: false
         }], { session });
@@ -48,19 +58,23 @@ exports.vendorSendUpdateCore = async function (vendorId, userId, type, message, 
         }
 
         // 2. إشعار خارجي عبر Firebase (التطبيق مغلق)
-        const targetUser = await User.findById(userId).select('fcm_token');
-        if (targetUser && targetUser.fcm_token && admin) {
-            await admin.messaging().send({
-                token: targetUser.fcm_token,
-                notification: { title: "تحديث جديد من التاجر", body: message },
-                data: { type: type || "update" }
-            });
+        try {
+            const targetUser = await User.findById(userId).select('fcm_token');
+            if (targetUser && targetUser.fcm_token && admin) {
+                await admin.messaging().send({
+                    token: targetUser.fcm_token,
+                    notification: { title: "تحديث جديد من التاجر", body: message },
+                    data: { type: type || "update" }
+                });
+            }
+        } catch {
+            console.warn('Push delivery failed; the notification remains available in the inbox.');
         }
 
         return newNotification[0];
     } catch (error) {
         console.error("Failed to send vendor update notification:", error);
-        return null; 
+        throw error;
     }
 };
 
@@ -68,19 +82,20 @@ exports.vendorSendUpdateCore = async function (vendorId, userId, type, message, 
 // 🚀 2. البث الجماعي (Broadcast) - مع Firebase
 // ==========================================
 exports.sendNotificationBroadcastCore = async (senderId, senderRole, notificationData) => {
+    if (!['admin', 'vendor'].includes(senderRole)) throw new AppError('Only admins and vendors can broadcast notifications.', 403);
     const { title, message, type, targetAudience, packageId, bookingStatus } = notificationData;
     let targetUserIds = []; 
 
     if (senderRole === 'admin') {
         // 👑 الإدارة: بث عام
-        let query = { isActive: true };
+        let query = { isActive: true, isDelete: { $ne: true }, deletionRequestedAt: null };
         if (targetAudience === 'users_only') query.role = 'user';
         if (targetAudience === 'vendors_only') query.role = 'vendor';
         const users = await User.find(query).select('_id');
         targetUserIds = users.map(user => user._id);
     } else if (senderRole === 'vendor') {
         // 🏪 التاجر: فلترة ذكية لعملائه
-        let bookingQuery = { vendor_id: senderId };
+        let bookingQuery = { vendor_id: senderId, isDeleted: { $ne: true } };
         if (packageId) bookingQuery.package_id = packageId;
         if (bookingStatus) {
             bookingQuery.status = bookingStatus;
@@ -97,7 +112,7 @@ exports.sendNotificationBroadcastCore = async (senderId, senderRole, notificatio
     // 1. الحفظ في MongoDB (ضربة واحدة)
     const notificationsArray = targetUserIds.map(userId => ({
         user_id: userId,
-        sender_id: senderId,
+        admin_id: senderRole === 'admin' ? senderId : null,
         vendor_id: senderRole === 'vendor' ? senderId : null, 
         notification_type: type || "broadcast",
         notification_message: message,
@@ -123,7 +138,7 @@ exports.sendNotificationBroadcastCore = async (senderId, senderRole, notificatio
     try {
         if (admin) {
             const usersWithTokens = await User.find({ _id: { $in: targetUserIds }, fcm_token: { $ne: null } }).select('fcm_token');
-            const deviceTokens = usersWithTokens.map(u => u.fcm_token);
+            const deviceTokens = [...new Set(usersWithTokens.map(u => u.fcm_token).filter(token => typeof token === 'string' && token.trim()))];
             
             if (deviceTokens.length > 0) {
                 const payload = {
@@ -131,7 +146,9 @@ exports.sendNotificationBroadcastCore = async (senderId, senderRole, notificatio
                     data: { type: type || "broadcast", click_action: "FLUTTER_NOTIFICATION_CLICK" },
                     tokens: deviceTokens
                 };
-                await admin.messaging().sendEachForMulticast(payload);
+                for (let offset = 0; offset < deviceTokens.length; offset += 500) {
+                    await admin.messaging().sendEachForMulticast({ ...payload, tokens: deviceTokens.slice(offset, offset + 500) });
+                }
             }
         }
     } catch (firebaseError) {
@@ -150,7 +167,7 @@ exports.sendNotificationBroadcastCore = async (senderId, senderRole, notificatio
 // ==========================================
 exports.getMyNotificationsCore = async function (user, page = 1, limit = 20) {
     try {
-        let query = { user_id: user._id };
+        let query = visibleNotifications({ user_id: recipientId(user) });
 
         const skip = (page - 1) * limit;
 
@@ -182,6 +199,8 @@ exports.getSentNotificationsCore = async function (user, page = 1, limit = 20) {
         else if (checkRole(user.role, ["admin"])) query.admin_id = user._id;
         else throw new AppError("Only vendors and admins can view sent notifications", 403);
 
+        query = visibleNotifications(query);
+
         const skip = (page - 1) * limit;
 
         const [notifications, totalCount] = await Promise.all([
@@ -208,19 +227,14 @@ exports.getSentNotificationsCore = async function (user, page = 1, limit = 20) {
 // ==========================================
 exports.markAsReadCore = async function (user, notificationId) {
     try {
-        let query = { _id: notificationId };
-        
-        if (!checkRole(user.role, ["admin"])) {
-            if (checkRole(user.role, ["vendor"])) query.vendor_id = user._id;
-            else query.user_id = user._id;
-        }
+        const query = visibleNotifications({ _id: notificationId, user_id: recipientId(user) });
 
         const notification = await Notification.findOneAndUpdate(query, { is_read: true }, { new: true });
 
         if (!notification) throw new AppError("Notification not found or you are not authorized to modify it", 404);
 
         if (global.io) {
-            const roomName = checkRole(user.role, ["admin"]) ? 'admins_room' : `user_${user._id}`;
+            const roomName = `user_${recipientId(user)}`;
             global.io.to(roomName).emit('notification_read_sync', {
                 notification_id: notificationId,
                 action: 'decrement_badge'
@@ -239,15 +253,12 @@ exports.markAsReadCore = async function (user, notificationId) {
 // ==========================================
 exports.markAllAsReadCore = async function (user) {
     try {
-        let query = { is_read: false };
-        if (checkRole(user.role, ["vendor"])) query.vendor_id = user._id;
-        else if (checkRole(user.role, ["admin"])) query.admin_id = user._id;
-        else query.user_id = user._id;
+        const query = visibleNotifications({ user_id: recipientId(user), is_read: false });
 
         const result = await Notification.updateMany(query, { $set: { is_read: true } });
 
         if (global.io && result.modifiedCount > 0) {
-            const roomName = checkRole(user.role, ["admin"]) ? 'admins_room' : `user_${user._id}`;
+            const roomName = `user_${recipientId(user)}`;
             global.io.to(roomName).emit('notification_read_sync', { action: 'clear_badge' });
         }
 
@@ -263,12 +274,7 @@ exports.markAllAsReadCore = async function (user) {
 // ==========================================
 exports.deleteNotificationCore = async function (user, notificationId) {
     try {
-        let query = { _id: notificationId };
-        
-        if (!checkRole(user.role, ["admin"])) {
-            if (checkRole(user.role, ["vendor"])) query.vendor_id = user._id;
-            else query.user_id = user._id;
-        }
+        const query = visibleNotifications({ _id: notificationId, user_id: recipientId(user) });
 
         const notification = await Notification.findOneAndDelete(query);
 
@@ -286,10 +292,7 @@ exports.deleteNotificationCore = async function (user, notificationId) {
 // ==========================================
 exports.deleteAllNotificationsCore = async function (user) {
     try {
-        let query = {};
-        if (checkRole(user.role, ["vendor"])) query.vendor_id = user._id;
-        else if (checkRole(user.role, ["admin"])) query.admin_id = user._id;
-        else query.user_id = user._id;
+        const query = visibleNotifications({ user_id: recipientId(user) });
 
         const result = await Notification.deleteMany(query);
 

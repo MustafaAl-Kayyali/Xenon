@@ -8,7 +8,13 @@ export default function useApi(load, dependencies = []) {
   useEffect(() => {
     let active = true
 
-    load()
+    // Clear the previous result before filters, pages, or refreshes load again.
+    Promise.resolve()
+      .then(() => {
+        if (!active) return
+        setState({ loading: true, data: null, error: '' })
+        return load()
+      })
       .then((data) => {
         if (active) setState({ loading: false, data, error: '' })
       })

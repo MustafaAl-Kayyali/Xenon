@@ -23,11 +23,6 @@ const NotificationSchema = new mongoose.Schema({
         ref: "User",
         required: false
     },
-    sender_id: {
-        type: mongoose.Schema.Types.UUID,
-        ref: "User",
-        required: false
-    },
     title: {
         type: String,
         required: true 
@@ -75,19 +70,18 @@ const NotificationSchema = new mongoose.Schema({
     }
 }, {
     timestamps: true,
-    strict: 'throw',
-    versionKey: false,
+    strict: 'throw', 
+    versionKey: false, 
     toJSON: { getters: true, virtuals: true }, 
     toObject: { getters: true, virtuals: true } 
 });
 
-NotificationSchema.pre(/^find/, function(next) {
+NotificationSchema.pre(/^find/, function() {
     const sixtyDaysAgo = new Date(Date.now() - 60 * 24 * 60 * 60 * 1000);
     this.find({ 
         isDeleted: { $ne: true },
         createdAt: { $gte: sixtyDaysAgo } 
     });
-    next();
 });
 
 NotificationSchema.plugin(softDeletePlugin);

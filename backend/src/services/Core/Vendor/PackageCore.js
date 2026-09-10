@@ -17,7 +17,6 @@ const checkPackageOwnership = (userOrVendor, packageDoc) => {
             ? packageDoc.vendor_id._id.toString()
             : (packageDoc.vendor_id ? packageDoc.vendor_id.toString() : null);
 
-            
         // Allow if it matches Vendor ID, OR if it matches the Vendor's Owner (User) ID
         if (vendorId !== userOrVendor._id.toString() && vendorId !== userOrVendor.owner_user_id?.toString()) {
             console.log("OWNERSHIP FAILED!");

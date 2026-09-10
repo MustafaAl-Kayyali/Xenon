@@ -10,7 +10,7 @@ import { ROUTES } from '../routes/routes.config.js'
 import { authApi, profileApi } from '../services/api.js'
 import { ROLE_KEY, storage, TOKEN_KEY } from '../services/storage.js'
 import { isExpiredToken } from '../utils/authToken.js'
-import { formatBirthDateForApi, isValidEmail, latestBirthDateForAge, validateVendorAccount, validateVendorBusiness } from '../utils/formValidation.js'
+import { formatBirthDateForApi, isValidEmail, latestBirthDateForAge, normalizeIban, validateVendorAccount, validateVendorBusiness } from '../utils/formValidation.js'
 import { canResumeVendorOnboarding, createVendorOnboardingDraft, VENDOR_ONBOARDING_KEY } from '../utils/vendorOnboarding.js'
 
 const vendorImage = 'https://images.unsplash.com/photo-1666689468289-bd7ae53d5ba9?auto=format&fit=crop&w=1800&q=88'
@@ -114,7 +114,7 @@ export default function VendorRegistration() {
 
     const body = new FormData()
     ;['company_name', 'address', 'city'].forEach((key) => body.append(key, form[key].trim()))
-    body.append('iban_number', form.iban_number.replace(/\s/g, '').toUpperCase())
+    body.append('iban_number', normalizeIban(form.iban_number))
     DOCUMENTS.forEach(([key]) => { if (form[key]) body.append(key, form[key]) })
 
     setStatus({ loading: true, message: '', type: '' })
@@ -138,10 +138,10 @@ export default function VendorRegistration() {
           <header className="auth-head"><h1 className="auth-title">{step === 3 ? 'Application received' : 'Partner Registration'}</h1><p className="auth-subtitle">{step === 1 ? 'Create your secure account before submitting your business for review.' : step === 2 ? 'Provide the business details and verification documents required for approval.' : 'Your business information is now waiting for Xenon administrator review.'}</p></header>
 
           {step === 1 && <form className="register-form" onSubmit={createAccount} noValidate>
-            <div className="field"><label>Full Name</label><input autoComplete="name" maxLength="100" value={form.name} onChange={update('name')} required /></div>
-            <div className="field-grid"><div className="field"><label>Work Email</label><input type="email" autoComplete="email" value={form.email} onChange={update('email')} required /></div><div className="field"><label>Date of Birth</label><input type="date" max={latestBirthDateForAge(18)} value={form.DateOfBirth} onChange={update('DateOfBirth')} required /><p className="field-hint">Applicants must be at least 18 years old.</p></div></div>
-            <div className="field-grid"><div className="field"><label>Title / Prefix</label><select value={form.gender} onChange={update('gender')} required><option value="">Select</option><option value="male">Mr.</option><option value="female">Ms.</option></select></div><div className="field"><label>Mobile Number</label><input type="tel" inputMode="numeric" autoComplete="tel" maxLength="10" placeholder="0790000000" value={form.mobileNumber} onChange={update('mobileNumber')} required /></div></div>
-            <div className="field"><label>Email verification code</label><div className="input-action-row"><input inputMode="numeric" autoComplete="one-time-code" maxLength="6" placeholder="000000" value={form.otp} onChange={update('otp')} required /><button className="secondary-button" type="button" disabled={otpStatus.loading} onClick={sendOtp}>{otpStatus.loading ? 'Sending…' : otpStatus.sent ? 'Resend code' : 'Send code'}</button></div>{otpStatus.message && <p className={`form-message ${otpStatus.sent ? 'success' : 'error'}`}>{otpStatus.message}</p>}</div>
+            <div className="field"><label htmlFor="vendorregistration-full-name">Full Name</label><input id="vendorregistration-full-name" autoComplete="name" maxLength="100" value={form.name} onChange={update('name')} required /></div>
+            <div className="field-grid"><div className="field"><label htmlFor="vendorregistration-work-email">Work Email</label><input id="vendorregistration-work-email" type="email" autoComplete="email" value={form.email} onChange={update('email')} required /></div><div className="field"><label htmlFor="vendorregistration-date-of-birth">Date of Birth</label><input id="vendorregistration-date-of-birth" type="date" max={latestBirthDateForAge(18)} value={form.DateOfBirth} onChange={update('DateOfBirth')} required /><p className="field-hint">Applicants must be at least 18 years old.</p></div></div>
+            <div className="field-grid"><div className="field"><label htmlFor="vendorregistration-title-prefix">Title / Prefix</label><select id="vendorregistration-title-prefix" value={form.gender} onChange={update('gender')} required><option value="">Select</option><option value="male">Mr.</option><option value="female">Ms.</option></select></div><div className="field"><label htmlFor="vendorregistration-mobile-number">Mobile Number</label><input id="vendorregistration-mobile-number" type="tel" inputMode="numeric" autoComplete="tel" maxLength="10" placeholder="0790000000" value={form.mobileNumber} onChange={update('mobileNumber')} required /></div></div>
+            <div className="field"><label htmlFor="vendorregistration-email-verification-code">Email verification code</label><div className="input-action-row"><input id="vendorregistration-email-verification-code" inputMode="numeric" autoComplete="one-time-code" maxLength="6" placeholder="000000" value={form.otp} onChange={update('otp')} required /><button className="secondary-button" type="button" disabled={otpStatus.loading} onClick={sendOtp}>{otpStatus.loading ? 'Sending…' : otpStatus.sent ? 'Resend code' : 'Send code'}</button></div>{otpStatus.message && <p className={`form-message ${otpStatus.sent ? 'success' : 'error'}`}>{otpStatus.message}</p>}</div>
             <PasswordField value={form.password} onChange={update('password')} />
             <PasswordField label="Confirm password" value={form.confirm} onChange={update('confirm')} showStrength={false} autoComplete="new-password" />
             {status.message && <p className={`form-message ${status.type}`} role="alert">{status.message}</p>}
@@ -149,11 +149,11 @@ export default function VendorRegistration() {
           </form>}
 
           {step === 2 && <form className="register-form" onSubmit={submitApplication} noValidate>
-            <div className="field"><label>Business Name</label><input maxLength="100" value={form.company_name} onChange={update('company_name')} required /></div>
-            <div className="field"><label>IBAN Number</label><input placeholder="JO00 0000 0000 0000 0000 0000 0000 00" value={form.iban_number} onChange={update('iban_number')} required /></div>
-            <div className="field"><label>Business Address</label><input value={form.address} onChange={update('address')} required /></div>
-            <div className="field"><label>City</label><input value={form.city} onChange={update('city')} required /><p className="field-hint">Vendor applications are currently available for businesses operating in Jordan.</p></div>
-            <div className="document-grid">{DOCUMENTS.map(([key, label, required]) => <div className="field" key={key}><label>{label}{required ? ' *' : ' (optional)'}</label><input type="file" accept="image/jpeg,image/png,image/webp" onChange={updateFile(key)} required={required} /><p className="field-hint">JPEG, PNG, or WebP · maximum 5 MB</p></div>)}</div>
+            <div className="field"><label htmlFor="vendorregistration-business-name">Business Name</label><input id="vendorregistration-business-name" maxLength="100" value={form.company_name} onChange={update('company_name')} required /></div>
+            <div className="field"><label htmlFor="vendorregistration-iban-number">IBAN Number</label><input id="vendorregistration-iban-number" autoCapitalize="characters" maxLength="37" placeholder="JO94 CBJO 0010 0000 0000 0131 0003 02" value={form.iban_number} onChange={update('iban_number')} required /><p className="field-hint">30 characters: JO, check digits, bank code, branch code, and account number.</p></div>
+            <div className="field"><label htmlFor="vendorregistration-business-address">Business Address</label><input id="vendorregistration-business-address" value={form.address} onChange={update('address')} required /></div>
+            <div className="field"><label htmlFor="vendorregistration-city">City</label><input id="vendorregistration-city" value={form.city} onChange={update('city')} required /><p className="field-hint">Vendor applications are currently available for businesses operating in Jordan.</p></div>
+            <div className="document-grid">{DOCUMENTS.map(([key, label, required]) => <div className="field" key={key}><label htmlFor={`document-${key}`}>{label}{required ? ' *' : ' (optional)'}</label><input id={`document-${key}`} type="file" accept="image/jpeg,image/png,image/webp" onChange={updateFile(key)} required={required} /><p className="field-hint">JPEG, PNG, or WebP · maximum 5 MB</p></div>)}</div>
             {status.message && <p className={`form-message ${status.type}`} role="alert">{status.message}</p>}
             <p className="field-hint">Your business details are saved in this browser tab. Uploaded documents must be selected again after a refresh.</p>
             <div className="vendor-actions"><Link className="secondary-button" to={ROUTES.LANDING}><ArrowLeft size={15} /> Return Home</Link><button className="primary-button" disabled={status.loading}>{status.loading ? 'Submitting…' : <>Submit Application <ArrowRight size={15} /></>}</button></div>

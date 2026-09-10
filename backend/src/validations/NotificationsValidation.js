@@ -1,57 +1,33 @@
 const Joi = require('joi');
 const AppError = require('../utils/AppError');
 
-const handleJoiError = (error, next) => {
-    if (error) {
-        const errorMessage = error.details.map(err => err.message).join(' | ');
-        return next(new AppError(errorMessage, 400));
-    }
-};
+const types = ['booking', 'complaint', 'feedback', 'broadcast', 'update', 'system_alert', 'direct_message', 'marketing'];
+const message = Joi.string().trim().min(5).max(500).required();
+const type = Joi.string().valid(...types).optional();
 
-const targetedNotificationSchema = Joi.object({
-    userIds: Joi.alternatives().try(
-        Joi.string().uuid(),
-        Joi.array().items(Joi.string().uuid()).min(1)
-    ).required().messages({
-        'any.required': 'You must provide at least one user ID.'
-    }),
-    title: Joi.string().trim().min(3).max(100).required(),
-    message: Joi.string().trim().min(5).max(500).required(),
-    type: Joi.string().optional()
-});
+function validate(schema, location) {
+    return (req, res, next) => {
+        const { error, value } = schema.validate(req[location], { abortEarly: false });
+        if (error) return next(new AppError(error.details.map(detail => detail.message).join(' | '), 400));
+        req[location] = value;
+        next();
+    };
+}
 
-const broadcastSchema = Joi.object({
+exports.validateTargetedNotification = validate(Joi.object({
+    userId: Joi.string().uuid().required(), type, message
+}), 'body');
+
+exports.validateBroadcast = validate(Joi.object({
     title: Joi.string().trim().min(3).max(100).required(),
-    message: Joi.string().trim().min(5).max(500).required(),
-    type: Joi.string().optional(),
+    message, type,
     targetAudience: Joi.string().valid('all', 'users_only', 'vendors_only').optional(),
     packageId: Joi.string().uuid().optional(),
-    bookingStatus: Joi.string().optional()
-});
+    bookingStatus: Joi.string().valid('pending_payment', 'pending', 'accepted', 'completed', 'rejected', 'cancelled').optional()
+}), 'body');
 
-const mongoIdParamSchema = Joi.object({
-    id: Joi.string().uuid().required().messages({
-        'string.guid': 'Invalid ID format. Must be a valid UUIDv7.'
-    })
-});
-
-exports.validateTargetedNotification = (req, res, next) => {
-    const { error, value } = targetedNotificationSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
-    if (error) return handleJoiError(error, next);
-    req.body = value;
-    next();
-};
-
-exports.validateBroadcast = (req, res, next) => {
-    const { error, value } = broadcastSchema.validate(req.body, { abortEarly: false, stripUnknown: true });
-    if (error) return handleJoiError(error, next);
-    req.body = value;
-    next();
-};
-
-exports.validateNotificationIdParam = (req, res, next) => {
-    const { error, value } = mongoIdParamSchema.validate(req.params, { abortEarly: false, stripUnknown: true });
-    if (error) return handleJoiError(error, next);
-    req.params = value;
-    next();
-};
+exports.validateNotificationIdParam = validate(Joi.object({ id: Joi.string().uuid().required() }), 'params');
+exports.validateNotificationQuery = validate(Joi.object({
+    page: Joi.number().integer().min(1).default(1),
+    limit: Joi.number().integer().min(1).max(100).default(20)
+}), 'query');

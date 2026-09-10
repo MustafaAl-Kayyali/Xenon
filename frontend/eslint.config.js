@@ -15,4 +15,8 @@ export default defineConfig([
       parserOptions: { ecmaVersion: 'latest', ecmaFeatures: { jsx: true }, sourceType: 'module' },
     },
   },
+  {
+    files: ['tests/**/*.js', 'scripts/**/*.{js,cjs}', 'vite.config.js', 'eslint.config.js'],
+    languageOptions: { globals: globals.node },
+  },
 ])

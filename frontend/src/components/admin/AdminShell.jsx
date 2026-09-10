@@ -39,8 +39,8 @@ export default function AdminShell() {
     <div className="admin-layout">
       <aside className="admin-sidebar">
         <div className="admin-brand"><span>Xenon</span><small>PREMIUM TRAVEL</small></div>
-        <nav>{links.map(([to, label, Icon]) => <NavLink key={to} end={to === '/admin'} to={to}><Icon size={18} />{label}</NavLink>)}</nav>
-        <button className="admin-logout" onClick={logout}><LogOut size={18} />Logout</button>
+        <nav aria-label="Admin navigation">{links.map(([to, label, Icon]) => <NavLink key={to} end={to === '/admin'} to={to} aria-label={label} title={label}><Icon size={18} />{label}</NavLink>)}</nav>
+        <button className="admin-logout" type="button" aria-label="Log out" title="Log out" onClick={logout}><LogOut size={18} />Logout</button>
       </aside>
       <main className="admin-main"><Outlet /></main>
     </div>

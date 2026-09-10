@@ -34,7 +34,7 @@ export function VendorInfo({ label, value }) {
   return (
     <p className="vendor-info">
       <span>{label}</span>
-      <strong>{value || '—'}</strong>
+      <strong>{value ?? '—'}</strong>
     </p>
   )
 }

@@ -92,7 +92,7 @@ exports.resolveReportCore = async function (reportId, action, adminNotes, adminI
                 }
 
                 // 🌟 حماية ضد الـ Dynamic Injection (حدد فقط الموديلات المسموح حذفها)
-                const allowedModels = ['Review', 'Package']; // عدلها حسب الموديلات الحقيقية في مشروعك
+                const allowedModels = ['ReviewModel', 'CommentModel', 'PackageModel']; // عدلها حسب الموديلات الحقيقية في مشروعك
                 if (!allowedModels.includes(report.content_type)) {
                     throw new AppError(`Security Error: Modifying ${report.content_type} is not allowed via reporting.`, 403);
                 }

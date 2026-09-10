@@ -57,12 +57,12 @@ export default function ResetPassword() {
         <p>Enter the six-digit code sent to your email. The code expires after five minutes.</p>
         <form className="form-stack" onSubmit={submit} noValidate>
           <div className="field">
-            <label>Email address</label>
-            <input type="email" autoComplete="email" value={form.email} onChange={updateField('email')} disabled={complete} required />
+            <label htmlFor="resetpassword-email-address">Email address</label>
+            <input id="resetpassword-email-address" type="email" autoComplete="email" value={form.email} onChange={updateField('email')} disabled={complete} required />
           </div>
           <div className="field">
-            <label>Verification code</label>
-            <input
+            <label htmlFor="resetpassword-verification-code">Verification code</label>
+            <input id="resetpassword-verification-code"
               className="otp-input"
               inputMode="numeric"
               autoComplete="one-time-code"
