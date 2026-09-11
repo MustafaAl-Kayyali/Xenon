@@ -2,7 +2,7 @@
 
 Welcome to **Xenon**, a comprehensive, intelligent tourism platform designed to revolutionize the way travelers discover, plan, and book their trips. The platform combines a powerful backend, a responsive web dashboard, a seamless mobile application, and a standalone generative AI travel advisor.
 
-## 🌟 Why Use Xenon? (The Business Value)
+## 🌟 Why Use Xenon? 
 
 In a crowded market of travel applications, Xenon stands out by bridging the gap between intelligent automation and accessible business tools. It is specifically designed to empower both individual travelers and Small to Medium-sized Businesses (SMBs) in the tourism sector.
 
