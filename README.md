@@ -6,7 +6,7 @@ Welcome to **Xenon**, a comprehensive, intelligent tourism platform designed to 
 
 In a crowded market of travel applications, Xenon stands out by bridging the gap between intelligent automation and accessible business tools. It is specifically designed to empower both individual travelers and Small to Medium-sized Businesses (SMBs) in the tourism sector.
 
-### 🏢 For Tourism SMBs (Vendors & Agencies)
+### 🏢 For Tourism SMBs (Vendors)
 Small and medium-sized agencies often struggle with the high costs of digital transformation and managing fragmented tools. Xenon provides them with an enterprise-grade platform out-of-the-box:
 - **Zero-Friction Digitization:** A comprehensive web dashboard to easily list packages, manage capacities, and track revenues without needing in-house technical teams.
 - **Leveling the Playing Field:** The integrated AI advisor acts as a 24/7 sales agent for SMBs, intelligently recommending their packages to users based on live data, giving them the same technological edge as industry giants.
